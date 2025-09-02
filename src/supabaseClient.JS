@@ -1,11 +1,29 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 
-dotenv.config();
+import dotenv from "dotenv";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_KEY
-);
+import axios from "axios";
 
-export default supabase;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const client = axios.create({
+  baseURL: `${SUPABASE_URL}/rest/v1`,
+  headers: {
+    apikey: SUPABASE_SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    "Content-Type": "application/json",
+    Prefer: "return=representation"
+  }
+});
+
+export default client;
+
+export const insertUser = async (userData) => {
+  const { data } = await client.post("/auth_user.users", userData);
+  return data;
+};
+
+export const getUsers = async () => {
+  const { data } = await client.get("/auth_user.users?select=*");
+  return data;
+};

@@ -1,126 +1,108 @@
-import supabase from "../db.js";
+import pool from "../db.js";
 import bcrypt from "bcrypt";
-import crypto from "crypto";
-import e from "express";
 import jwt from "jsonwebtoken";
 
-// User registration
-export const registerUser = async (data) => {
-  const { user_name, email, password, first_name, last_name } = data;
-  console.log("Received email value:", email);
+export const registerUser = async ({
+  user_name,
+  email,
+  password,
+  first_name,
+  last_name
+}) => {
+  // hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-  // Validate required fields
-  if (!user_name || !email || !password) {
-    throw new Error("Fields user_name, email, and password are required");
-  }
+  const query = `
+    INSERT INTO auth_user."user" 
+      (user_name, email, password, first_name, last_name)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, user_name, email, first_name, last_name, created_at
+  `;
+  const values = [user_name, email, hashedPassword, first_name, last_name];
 
-  try {
-    // Check if the email already exists
-    const { data: existingEmail, error: emailError } = await supabase
-      .from('auth_user.user')
-      .select('user_id')
-      .eq('email', email)
-      .maybeSingle();
-    console.log(emailError);
-
-    // Check if the user_name already exists
-    const { data: existingUserName, error: userNameError } = await supabase
-      .from('auth_user.user')
-      .select("user_id")
-      .eq("user_name", user_name)
-      .maybeSingle();
-
-    // Handle email errors
-    if (emailError) {
-      console.log(emailError);
-      throw new Error("Error checking email: " + emailError.message);
-    }
-    if (existingEmail) {
-      throw new Error("The email is already registered");
-    }
-
-    // Handle user_name errors
-    if (userNameError) {
-      throw new Error("Error checking user_name: " + userNameError.message);
-    }
-    if (existingUserName) {
-      throw new Error("The user_name is already registered");
-    }
-
-    // Generate salt
-    const salt = crypto.randomBytes(16).toString("hex");
-
-    // Create password hash + salt
-    const password_hash = await bcrypt.hash(password + salt, 10);
-
-    // Prepare data to insert
-    const insertData = {
-      user_name,
-      email,
-      password_hash,
-      salt,
-      first_name,
-      last_name
-    };
-
-    console.log("Inserting data:", insertData);
-
-    // Insert into Supabase
-    const { data: user, error: insertError } = await supabase
-      .from('auth_user.user')
-      .insert([insertData])
-      .select()
-      .maybeSingle();
-
-    if (insertError) {
-      console.error("Supabase insert error:", insertError);
-      throw new Error("Error registering the user: " + JSON.stringify(insertError));
-    }
-
-    return user;
-  } catch (err) {
-    console.error("Register user failed:", err);
-    throw new Error(err.message || "Unknown error while registering user");
-  }
+  const { rows } = await pool.query(query, values);
+  return rows[0];
 };
 
-// User login
-export const loginUser = async (data) => {
-  const { email, password } = data;
+export const loginUser = async ({ email, password }) => {
+  const query = `SELECT * FROM auth_user."user" WHERE email = $1`;
+  const { rows } = await pool.query(query, [email]);
 
-  if (!email || !password) {
-    throw new Error("Fields email and password are required");
+  const user = rows[0];
+  if (!user) {
+    throw new Error("Invalid credentials");
   }
 
-  try {
-    // Find user by email
-    const { data: user, error } = await supabase
-      .from('auth_user.user')
-      .select("*")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (error || !user) {
-      console.error("Supabase login error:", error);
-      throw new Error("Invalid credentials");
-    }
-
-    // Verify password using salt
-    const validPassword = await bcrypt.compare(password + user.salt, user.password_hash);
-    if (!validPassword) {
-      throw new Error("Invalid credentials");
-    }
-
-    // Generate JWT token
-    const token = jwt.sign(
-      { id: user.user_id, email: user.email, user_name: user.user_name },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    return { user, token };
-  } catch (err) {
-    console.error("Login user failed:", err);
-    throw new Error(err.message || "Unknown error during login");
+  // verificar contraseña
+  const validPassword = await bcrypt.compare(password, user.password);
+  if (!validPassword) {
+    throw new Error("Invalid credentials");
   }
+
+  // generar JWT
+  const token = jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      user_name: user.user_name,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "1h" }
+  );
+
+  // no devolvemos password
+  return {
+    user: {
+      id: user.id,
+      user_name: user.user_name,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      created_at: user.created_at,
+    },
+    token,
+  };
 };
+const router = express.Router();
+
+// GET todos los usuarios
+router.get("/", async (req, res) => {
+  try {
+    const { data } = await supabase.get("/auth_user.user?select=*");
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST registrar usuario
+router.post("/register", async (req, res) => {
+  try {
+    const { data } = await supabase.post("/auth_user.user", req.body);
+    res.status(201).json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT actualizar usuario por id
+router.put("/:id", async (req, res) => {
+  try {
+    const { data } = await supabase.patch(`/auth_user.user?id=eq.${req.params.id}`, req.body);
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE usuario por id
+router.delete("/:id", async (req, res) => {
+  try {
+    await supabase.delete(`/auth_user.user?id=eq.${req.params.id}`);
+    res.status(204).end();
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;
