@@ -1,13 +1,13 @@
 // src/routes/user.routes.js
 import { Router } from "express";
-import supabase from "../supabaseClient.js";
+import supabase from "./supabaseClient.js";
 
 const router = Router();
 
 // GET: lista de usuarios
 router.get("/", async (req, res) => {
   try {
-    const { data } = await supabase.get("/auth_user.user?select=*");
+    const { data } = await supabase.get("/userss?select=*");
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });

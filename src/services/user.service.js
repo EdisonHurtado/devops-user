@@ -68,7 +68,7 @@ const router = express.Router();
 // GET todos los usuarios
 router.get("/", async (req, res) => {
   try {
-    const { data } = await supabase.get("/auth_user.user?select=*");
+    const { data } = await supabase.get("/auth_user.userss?select=*");
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -77,7 +77,9 @@ router.get("/", async (req, res) => {
 
 // POST registrar usuario
 router.post("/register", async (req, res) => {
+  console.log("text")
   try {
+    console.log("text")
     const { data } = await supabase.post("/auth_user.user", req.body);
     res.status(201).json(data);
   } catch (err) {

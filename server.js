@@ -1,6 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
-import userRoutes from "../MS-USER/src/routes/user.routes.js";
+import userRoutes from "./src/routes/user.routes.js";
 
 dotenv.config();
 const app = express();
