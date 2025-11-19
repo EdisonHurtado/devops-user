@@ -1,110 +1,96 @@
 import pool from "../db.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
-export const registerUser = async ({
-  user_name,
-  email,
-  password,
-  first_name,
-  last_name
-}) => {
-  // hash password
+// GET - Obtener todos los usuarios
+export const getAllUsers = async () => {
+  try {
+    const query = `
+      SELECT id, email, full_name, phone, is_active, created_at, updated_at
+      FROM auth_service.users
+      ORDER BY created_at DESC
+    `;
+    const { rows } = await pool.query(query);
+    return rows;
+  } catch (error) {
+    console.error("Error en getAllUsers:", error.message);
+    throw error;
+  }
+};
+
+// GET - Obtener usuario por ID
+export const getUserById = async (id) => {
+  const query = `
+    SELECT id, email, full_name, phone, is_active, created_at, updated_at
+    FROM auth_service.users
+    WHERE id = $1
+  `;
+  const { rows } = await pool.query(query, [id]);
+  if (!rows[0]) throw new Error("Usuario no encontrado");
+  return rows[0];
+};
+
+// POST - Crear usuario
+export const createUser = async ({ email, password, full_name, phone }) => {
+  const id = uuidv4();
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const query = `
-    INSERT INTO auth_user."user" 
-      (user_name, email, password, first_name, last_name)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, user_name, email, first_name, last_name, created_at
+    INSERT INTO auth_service.users 
+      (id, email, password_hash, full_name, phone, is_active)
+    VALUES ($1, $2, $3, $4, $5, true)
+    RETURNING id, email, full_name, phone, is_active, created_at, updated_at
   `;
-  const values = [user_name, email, hashedPassword, first_name, last_name];
+  const values = [id, email, hashedPassword, full_name, phone];
 
   const { rows } = await pool.query(query, values);
   return rows[0];
 };
 
-export const loginUser = async ({ email, password }) => {
-  const query = `SELECT * FROM auth_user."user" WHERE email = $1`;
-  const { rows } = await pool.query(query, [email]);
+// PUT - Actualizar usuario
+export const updateUser = async (id, { email, full_name, phone, password }) => {
+  let query = `
+    UPDATE auth_service.users
+    SET email = COALESCE($1, email),
+        full_name = COALESCE($2, full_name),
+        phone = COALESCE($3, phone)
+  `;
+  let values = [email, full_name, phone];
 
-  const user = rows[0];
-  if (!user) {
-    throw new Error("Invalid credentials");
+  if (password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    query += `, password_hash = $4`;
+    values.push(hashedPassword);
   }
 
-  // verificar contraseña
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    throw new Error("Invalid credentials");
-  }
+  query += `, updated_at = CURRENT_TIMESTAMP
+    WHERE id = $${values.length + 1}
+    RETURNING id, email, full_name, phone, is_active, created_at, updated_at
+  `;
+  values.push(id);
 
-  // generar JWT
-  const token = jwt.sign(
-    {
-      id: user.id,
-      email: user.email,
-      user_name: user.user_name,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "1h" }
-  );
-
-  // no devolvemos password
-  return {
-    user: {
-      id: user.id,
-      user_name: user.user_name,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      created_at: user.created_at,
-    },
-    token,
-  };
+  const { rows } = await pool.query(query, values);
+  if (!rows[0]) throw new Error("Usuario no encontrado");
+  return rows[0];
 };
-const router = express.Router();
 
-// GET todos los usuarios
-router.get("/", async (req, res) => {
-  try {
-    const { data } = await supabase.get("/auth_user.userss?select=*");
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// DELETE - Eliminar usuario
+export const deleteUser = async (id) => {
+  const query = `DELETE FROM auth_service.users WHERE id = $1 RETURNING id`;
+  const { rows } = await pool.query(query, [id]);
+  if (!rows[0]) throw new Error("Usuario no encontrado");
+  return rows[0];
+};
 
-// POST registrar usuario
-router.post("/register", async (req, res) => {
-  console.log("text")
-  try {
-    console.log("text")
-    const { data } = await supabase.post("/auth_user.user", req.body);
-    res.status(201).json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// PUT actualizar usuario por id
-router.put("/:id", async (req, res) => {
-  try {
-    const { data } = await supabase.patch(`/auth_user.user?id=eq.${req.params.id}`, req.body);
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE usuario por id
-router.delete("/:id", async (req, res) => {
-  try {
-    await supabase.delete(`/auth_user.user?id=eq.${req.params.id}`);
-    res.status(204).end();
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-export default router;
+// PATCH - Desactivar usuario
+export const deactivateUser = async (id) => {
+  const query = `
+    UPDATE auth_service.users
+    SET is_active = false, updated_at = CURRENT_TIMESTAMP
+    WHERE id = $1
+    RETURNING id, email, full_name, phone, is_active, created_at, updated_at
+  `;
+  const { rows } = await pool.query(query, [id]);
+  if (!rows[0]) throw new Error("Usuario no encontrado");
+  return rows[0];
+};
