@@ -5,6 +5,6 @@ HTTP 200
 jsonpath "$.status" == "ok"
 jsonpath "$.service" == "ms-user"
 
-# API Docs
-GET {{host}}/api-docs
+# API Docs (sigue el redirect)
+GET {{host}}/api-docs/
 HTTP 200
