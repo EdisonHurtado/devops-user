@@ -1,35 +1,31 @@
-import pkg from "pg";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const { Pool } = pkg;
+const { Pool } = require('pg');
+require('dotenv').config();
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     require: true,
-    rejectUnauthorized: false,
+    rejectUnauthorized: false
   }
 });
 
-pool.on("error", (err) => {
-  console.error("❌ Error en pool:", err.message);
+pool.on('error', (err) => {
+  console.error('❌ Error en pool:', err.message);
 });
 
-pool.on("connect", () => {
-  console.log("✅ Conexión establecida a la base de datos");
+pool.on('connect', () => {
+  console.log('✅ Conexión establecida a la base de datos');
 });
 
 // Interceptar queries para loguearlas
 const originalQuery = pool.query.bind(pool);
 pool.query = function(text, values, callback) {
   const start = Date.now();
-  const params = values ? ` [${values.join(", ")}]` : "";
+  const params = values ? ` [${values.join(', ')}]` : '';
   
   console.log(`\n📝 SQL Query: ${text}${params}`);
   
-  if (typeof callback === "function") {
+  if (typeof callback === 'function') {
     return originalQuery(text, values, (err, result) => {
       const duration = Date.now() - start;
       if (err) {
@@ -55,4 +51,4 @@ pool.query = function(text, values, callback) {
   }
 };
 
-export default pool;
+module.exports = pool;

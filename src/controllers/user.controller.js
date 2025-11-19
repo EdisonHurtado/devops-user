@@ -1,62 +1,101 @@
-import {
+const { validationResult } = require('express-validator');
+const {
   getAllUsers,
   getUserById,
   createUser,
   updateUser,
   deleteUser,
   deactivateUser,
-} from "../services/user.service.js";
+} = require('../services/user.service');
 
-export const getUsers = async (req, res) => {
+const formatUser = (user) => ({
+  id: user.id,
+  email: user.email,
+  name: user.full_name,
+  phone: user.phone,
+  is_active: user.is_active,
+  created_at: user.created_at,
+  updated_at: user.updated_at
+});
+
+const getUsers = async (req, res) => {
   try {
     const users = await getAllUsers();
-    res.json(users);
+    res.status(200).json(users.map(formatUser));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
 
-export const getUser = async (req, res) => {
+const getUser = async (req, res) => {
   try {
-    const user = await getUserById(req.params.id);
-    res.json(user);
+    const { id } = req.params;
+    const user = await getUserById(id);
+    res.status(200).json(formatUser(user));
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
 };
 
-export const createNewUser = async (req, res) => {
+const createNewUser = async (req, res) => {
   try {
-    const user = await createUser(req.body);
-    res.status(201).json(user);
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
+    const { email, password, name, phone } = req.body;
+    const user = await createUser({ email, password, full_name: name, phone });
+    res.status(201).json(formatUser(user));
+  } catch (error) {
+    if (error.message.includes('duplicate')) {
+      return res.status(409).json({ error: 'Email ya registrado' });
+    }
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const updateExistingUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = {};
+    if (req.body.name) updates.full_name = req.body.name;
+    if (req.body.email) updates.email = req.body.email;
+    if (req.body.phone) updates.phone = req.body.phone;
+    if (req.body.password) updates.password = req.body.password;
+
+    const user = await updateUser(id, updates);
+    res.status(200).json(formatUser(user));
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
 };
 
-export const updateExistingUser = async (req, res) => {
+const deleteExistingUser = async (req, res) => {
   try {
-    const user = await updateUser(req.params.id, req.body);
-    res.json(user);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
-
-export const deleteExistingUser = async (req, res) => {
-  try {
-    await deleteUser(req.params.id);
-    res.status(204).end();
+    const { id } = req.params;
+    await deleteUser(id);
+    res.status(200).json({ message: 'Usuario eliminado' });
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
 };
 
-export const deactivateExistingUser = async (req, res) => {
+const deactivateExistingUser = async (req, res) => {
   try {
-    const user = await deactivateUser(req.params.id);
-    res.json(user);
+    const { id } = req.params;
+    const user = await deactivateUser(id);
+    res.status(200).json(formatUser(user));
   } catch (error) {
     res.status(404).json({ error: error.message });
   }
+};
+
+module.exports = {
+  getUsers,
+  getUser,
+  createNewUser,
+  updateExistingUser,
+  deleteExistingUser,
+  deactivateExistingUser
 };

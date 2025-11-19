@@ -1,219 +1,52 @@
-// src/routes/user.routes.js
-import { Router } from "express";
-import {
-  getUsers,
-  getUser,
-  createNewUser,
-  updateExistingUser,
-  deleteExistingUser,
-  deactivateExistingUser,
-} from "../controllers/user.controller.js";
+const express = require('express');
+const router = express.Router();
+const { body, validationResult } = require('express-validator');
+const { createNewUser, getUsers, getUser, updateExistingUser, deleteExistingUser, deactivateExistingUser } = require('../controllers/user.controller');
 
-const router = Router();
+const handleValidationErrors = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+  next();
+};
 
-/**
- * @swagger
- * /api/users:
- *   get:
- *     summary: Obtener todos los usuarios
- *     tags: [Usuarios]
- *     responses:
- *       200:
- *         description: Lista de usuarios
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Usuario'
- */
-router.get("/", getUsers);
+// POST /api/users (crear usuario)
+router.post('/',
+  body('email').isEmail().withMessage('Email inválido'),
+  body('password').isLength({ min: 6 }).withMessage('Password mínimo 6 caracteres'),
+  body('name').notEmpty().withMessage('Name requerido'),
+  handleValidationErrors,
+  createNewUser
+);
 
-/**
- * @swagger
- * /api/users/{id}:
- *   get:
- *     summary: Obtener usuario por ID
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *         description: ID del usuario
- *     responses:
- *       200:
- *         description: Usuario encontrado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Usuario'
- *       404:
- *         description: Usuario no encontrado
- */
-router.get("/:id", getUser);
+// POST /api/users/register (alias para crear)
+router.post('/register',
+  body('email').isEmail().withMessage('Email inválido'),
+  body('password').isLength({ min: 6 }).withMessage('Password mínimo 6 caracteres'),
+  body('name').notEmpty().withMessage('Name requerido'),
+  handleValidationErrors,
+  createNewUser
+);
 
-/**
- * @swagger
- * /api/users:
- *   post:
- *     summary: Crear nuevo usuario
- *     tags: [Usuarios]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - password
- *               - full_name
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "usuario@example.com"
- *               password:
- *                 type: string
- *                 minLength: 6
- *                 example: "123456"
- *               full_name:
- *                 type: string
- *                 example: "Juan Pérez"
- *               phone:
- *                 type: string
- *                 example: "+34123456789"
- *     responses:
- *       201:
- *         description: Usuario creado exitosamente
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Usuario'
- *       400:
- *         description: Error en la creación del usuario
- */
-router.post("/", createNewUser);
+// POST /api/users/login (solo retorna error 404 por ahora)
+router.post('/login', (req, res) => {
+  res.status(404).json({ error: 'Login no implementado en CRUD' });
+});
 
-/**
- * @swagger
- * /api/users/{id}:
- *   put:
- *     summary: Actualizar usuario
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *               full_name:
- *                 type: string
- *               phone:
- *                 type: string
- *               password:
- *                 type: string
- *     responses:
- *       200:
- *         description: Usuario actualizado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Usuario'
- *       400:
- *         description: Error en la actualización
- */
-router.put("/:id", updateExistingUser);
+// GET /api/users (con autenticación)
+router.get('/', getUsers);
 
-/**
- * @swagger
- * /api/users/{id}:
- *   delete:
- *     summary: Eliminar usuario
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       204:
- *         description: Usuario eliminado
- *       404:
- *         description: Usuario no encontrado
- */
-router.delete("/:id", deleteExistingUser);
+// GET /api/users/:id (con autenticación)
+router.get('/:id', getUser);
 
-/**
- * @swagger
- * /api/users/{id}/deactivate:
- *   patch:
- *     summary: Desactivar usuario
- *     tags: [Usuarios]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *           format: uuid
- *     responses:
- *       200:
- *         description: Usuario desactivado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Usuario'
- *       404:
- *         description: Usuario no encontrado
- */
-router.patch("/:id/deactivate", deactivateExistingUser);
+// PUT /api/users/:id (sin autenticación por ahora)
+router.put('/:id', updateExistingUser);
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Usuario:
- *       type: object
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *           example: "550e8400-e29b-41d4-a716-446655440000"
- *         email:
- *           type: string
- *           format: email
- *           example: "usuario@example.com"
- *         full_name:
- *           type: string
- *           example: "Juan Pérez"
- *         phone:
- *           type: string
- *           example: "+34123456789"
- *         is_active:
- *           type: boolean
- *           example: true
- *         created_at:
- *           type: string
- *           format: date-time
- *         updated_at:
- *           type: string
- *           format: date-time
- */
+// DELETE /api/users/:id (sin autenticación por ahora)
+router.delete('/:id', deleteExistingUser);
 
-export default router;
+// PATCH /api/users/:id/deactivate
+router.patch('/:id/deactivate', deactivateExistingUser);
+
+module.exports = router;

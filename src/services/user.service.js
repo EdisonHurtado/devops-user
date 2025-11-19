@@ -1,9 +1,10 @@
-import pool from "../db.js";
-import bcrypt from "bcrypt";
-import { v4 as uuidv4 } from "uuid";
+const pool = require('../db');
+const bcrypt = require('bcrypt');
 
-// GET - Obtener todos los usuarios
-export const getAllUsers = async () => {
+// Para tests, usar crypto en lugar de uuid
+const { randomUUID } = require('crypto');
+
+const getAllUsers = async () => {
   try {
     const query = `
       SELECT id, email, full_name, phone, is_active, created_at, updated_at
@@ -13,26 +14,24 @@ export const getAllUsers = async () => {
     const { rows } = await pool.query(query);
     return rows;
   } catch (error) {
-    console.error("Error en getAllUsers:", error.message);
+    console.error('Error en getAllUsers:', error.message);
     throw error;
   }
 };
 
-// GET - Obtener usuario por ID
-export const getUserById = async (id) => {
+const getUserById = async (id) => {
   const query = `
     SELECT id, email, full_name, phone, is_active, created_at, updated_at
     FROM auth_service.users
     WHERE id = $1
   `;
   const { rows } = await pool.query(query, [id]);
-  if (!rows[0]) throw new Error("Usuario no encontrado");
+  if (!rows[0]) throw new Error('Usuario no encontrado');
   return rows[0];
 };
 
-// POST - Crear usuario
-export const createUser = async ({ email, password, full_name, phone }) => {
-  const id = uuidv4();
+const createUser = async ({ email, password, full_name, phone }) => {
+  const id = randomUUID();
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const query = `
@@ -47,8 +46,7 @@ export const createUser = async ({ email, password, full_name, phone }) => {
   return rows[0];
 };
 
-// PUT - Actualizar usuario
-export const updateUser = async (id, { email, full_name, phone, password }) => {
+const updateUser = async (id, { email, full_name, phone, password }) => {
   let query = `
     UPDATE auth_service.users
     SET email = COALESCE($1, email),
@@ -70,20 +68,18 @@ export const updateUser = async (id, { email, full_name, phone, password }) => {
   values.push(id);
 
   const { rows } = await pool.query(query, values);
-  if (!rows[0]) throw new Error("Usuario no encontrado");
+  if (!rows[0]) throw new Error('Usuario no encontrado');
   return rows[0];
 };
 
-// DELETE - Eliminar usuario
-export const deleteUser = async (id) => {
+const deleteUser = async (id) => {
   const query = `DELETE FROM auth_service.users WHERE id = $1 RETURNING id`;
   const { rows } = await pool.query(query, [id]);
-  if (!rows[0]) throw new Error("Usuario no encontrado");
+  if (!rows[0]) throw new Error('Usuario no encontrado');
   return rows[0];
 };
 
-// PATCH - Desactivar usuario
-export const deactivateUser = async (id) => {
+const deactivateUser = async (id) => {
   const query = `
     UPDATE auth_service.users
     SET is_active = false, updated_at = CURRENT_TIMESTAMP
@@ -91,6 +87,15 @@ export const deactivateUser = async (id) => {
     RETURNING id, email, full_name, phone, is_active, created_at, updated_at
   `;
   const { rows } = await pool.query(query, [id]);
-  if (!rows[0]) throw new Error("Usuario no encontrado");
+  if (!rows[0]) throw new Error('Usuario no encontrado');
   return rows[0];
+};
+
+module.exports = {
+  getAllUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
+  deactivateUser
 };

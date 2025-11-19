@@ -1,21 +1,35 @@
-import swaggerJsdoc from "swagger-jsdoc";
-import swaggerUi from "swagger-ui-express";
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "MS-USER API",
+      title: "User Management API",
       version: "1.0.0",
-      description: "Microservicio CRUD de Usuarios",
+      description: "API para gestión de usuarios con Supabase",
       contact: {
-        name: "API Support"
+        name: "API Support",
+        email: "support@example.com"
       }
     },
     servers: [
       {
-        url: "http://localhost:3000",
-        description: "Servidor de desarrollo"
+        url: process.env.API_URL || "http://localhost:3000",
+        description: "Development server"
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT"
+        }
+      }
+    },
+    security: [
+      {
+        bearerAuth: []
       }
     ]
   },
@@ -24,4 +38,4 @@ const options = {
 
 const specs = swaggerJsdoc(options);
 
-export { specs, swaggerUi };
+module.exports = specs;
