@@ -1,10 +1,12 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      NODE_VERSION:
+        description: 'Node version'
+        required: false
+        default: '20.x'
 
 env:
   NODE_VERSION: '20.x'
