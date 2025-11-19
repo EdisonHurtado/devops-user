@@ -4,11 +4,21 @@ services:
   ms-user:
     build: .
     container_name: ms-user
-    network_mode: bridge
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://postgres:az2aoY8NFvC2P72x@db.lutorvywewujktkywase.supabase.co:5432/postgres
-      PORT: 3000
-    command: sh -c "apk add --no-cache bind-tools && npm start"
-    restart: unless-stopped
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=3000
+      - NODE_ENV=production
+      - NODE_OPTIONS=--dns-result-order=ipv4first
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+    enable_ipv6: false
