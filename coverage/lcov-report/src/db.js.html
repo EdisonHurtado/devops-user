@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">28.57% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>21/28</span>
+                <span class='fraction'>8/28</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">50% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>3/6</span>
+                <span class='fraction'>0/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">66.66% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/6</span>
+                <span class='fraction'>0/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">28.57% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>21/28</span>
+                <span class='fraction'>8/28</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line medium'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -132,18 +132,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -154,17 +154,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">13x</span>
-<span class="cline-any cline-yes">13x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
-<span class="cline-any cline-yes">11x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -184,19 +184,19 @@ pool.on('error', <span class="fstat-no" title="function not covered" >(e</span>r
 <span class="cstat-no" title="statement not covered" >  console.error('❌ Error en pool:', err.message);</span>
 });
 &nbsp;
-pool.on('connect', () =&gt; {
-  console.log('✅ Conexión establecida a la base de datos');
+pool.on('connect', <span class="fstat-no" title="function not covered" >()</span> =&gt; {
+<span class="cstat-no" title="statement not covered" >  console.log('✅ Conexión establecida a la base de datos');</span>
 });
 &nbsp;
 // Interceptar queries para loguearlas
 const originalQuery = pool.query.bind(pool);
-pool.query = function(text, values, callback) {
-  const start = Date.now();
-  const params = values ? ` [${values.join(', ')}]` : '';
+pool.query = <span class="fstat-no" title="function not covered" >fu</span>nction(text, values, callback) {
+  const start = <span class="cstat-no" title="statement not covered" >Date.now();</span>
+  const params = <span class="cstat-no" title="statement not covered" >values ? ` [${values.join(', ')}]` : '';</span>
   
-  console.log(`\n📝 SQL Query: ${text}${params}`);
+<span class="cstat-no" title="statement not covered" >  console.log(`\n📝 SQL Query: ${text}${params}`);</span>
   
-  <span class="missing-if-branch" title="if path not taken" >I</span>if (typeof callback === 'function') {
+<span class="cstat-no" title="statement not covered" >  if (typeof callback === 'function') {</span>
 <span class="cstat-no" title="statement not covered" >    return originalQuery(text, values, <span class="fstat-no" title="function not covered" >(e</span>rr, result) =&gt; {</span>
       const duration = <span class="cstat-no" title="statement not covered" >Date.now() - start;</span>
 <span class="cstat-no" title="statement not covered" >      if (err) {</span>
@@ -207,17 +207,17 @@ pool.query = function(text, values, callback) {
 <span class="cstat-no" title="statement not covered" >      callback(err, result);</span>
     });
   } else {
-    const promise = originalQuery(text, values);
-    return promise
-      .then((result) =&gt; {
-        const duration = Date.now() - start;
-        console.log(`✅ Resultado: ${result.rowCount} filas (${duration}ms)`);
-        return result;
+    const promise = <span class="cstat-no" title="statement not covered" >originalQuery(text, values);</span>
+<span class="cstat-no" title="statement not covered" >    return promise</span>
+      .then(<span class="fstat-no" title="function not covered" >(r</span>esult) =&gt; {
+        const duration = <span class="cstat-no" title="statement not covered" >Date.now() - start;</span>
+<span class="cstat-no" title="statement not covered" >        console.log(`✅ Resultado: ${result.rowCount} filas (${duration}ms)`);</span>
+<span class="cstat-no" title="statement not covered" >        return result;</span>
       })
-      .catch((err) =&gt; {
-        const duration = Date.now() - start;
-        console.log(`❌ Error: ${err.message} (${duration}ms)`);
-        throw err;
+      .catch(<span class="fstat-no" title="function not covered" >(e</span>rr) =&gt; {
+        const duration = <span class="cstat-no" title="statement not covered" >Date.now() - start;</span>
+<span class="cstat-no" title="statement not covered" >        console.log(`❌ Error: ${err.message} (${duration}ms)`);</span>
+<span class="cstat-no" title="statement not covered" >        throw err;</span>
       });
   }
 };
@@ -229,7 +229,7 @@ module.exports = pool;</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-11-19T21:06:22.937Z
+                at 2025-11-19T21:14:24.196Z
             </div>
         <script src="../prettify.js"></script>
         <script>

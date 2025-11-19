@@ -1,93 +1,73 @@
 const pool = require('../db');
 const bcrypt = require('bcrypt');
 
-// Para tests, usar crypto en lugar de uuid
-const { randomUUID } = require('crypto');
-
 const getAllUsers = async () => {
-  try {
-    const query = `
-      SELECT id, email, full_name, phone, is_active, created_at, updated_at
-      FROM auth_service.users
-      ORDER BY created_at DESC
-    `;
-    const { rows } = await pool.query(query);
-    return rows;
-  } catch (error) {
-    console.error('Error en getAllUsers:', error.message);
-    throw error;
-  }
+  const query = 'SELECT * FROM auth_service.users WHERE is_active = true';
+  const { rows } = await pool.query(query);
+  return rows;
 };
 
 const getUserById = async (id) => {
-  const query = `
-    SELECT id, email, full_name, phone, is_active, created_at, updated_at
-    FROM auth_service.users
-    WHERE id = $1
-  `;
+  const query = 'SELECT * FROM auth_service.users WHERE id = $1';
   const { rows } = await pool.query(query, [id]);
-  if (!rows[0]) throw new Error('Usuario no encontrado');
+  if (rows.length === 0) throw new Error('User not found');
   return rows[0];
 };
 
 const createUser = async ({ email, password, full_name, phone }) => {
-  const id = randomUUID();
   const hashedPassword = await bcrypt.hash(password, 10);
-
   const query = `
-    INSERT INTO auth_service.users 
-      (id, email, password_hash, full_name, phone, is_active)
-    VALUES ($1, $2, $3, $4, $5, true)
-    RETURNING id, email, full_name, phone, is_active, created_at, updated_at
+    INSERT INTO auth_service.users (email, password_hash, full_name, phone)
+    VALUES ($1, $2, $3, $4)
+    RETURNING *
   `;
-  const values = [id, email, hashedPassword, full_name, phone];
-
-  const { rows } = await pool.query(query, values);
+  const { rows } = await pool.query(query, [email, hashedPassword, full_name, phone]);
   return rows[0];
 };
 
-const updateUser = async (id, { email, full_name, phone, password }) => {
-  let query = `
-    UPDATE auth_service.users
-    SET email = COALESCE($1, email),
-        full_name = COALESCE($2, full_name),
-        phone = COALESCE($3, phone)
-  `;
-  let values = [email, full_name, phone];
+const updateUser = async (id, updates) => {
+  const fields = [];
+  const values = [];
+  let paramCount = 1;
 
-  if (password) {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    query += `, password_hash = $4`;
+  if (updates.full_name) {
+    fields.push(`full_name = $${paramCount++}`);
+    values.push(updates.full_name);
+  }
+  if (updates.email) {
+    fields.push(`email = $${paramCount++}`);
+    values.push(updates.email);
+  }
+  if (updates.phone) {
+    fields.push(`phone = $${paramCount++}`);
+    values.push(updates.phone);
+  }
+  if (updates.password) {
+    const hashedPassword = await bcrypt.hash(updates.password, 10);
+    fields.push(`password_hash = $${paramCount++}`);
     values.push(hashedPassword);
   }
 
-  query += `, updated_at = CURRENT_TIMESTAMP
-    WHERE id = $${values.length + 1}
-    RETURNING id, email, full_name, phone, is_active, created_at, updated_at
-  `;
+  fields.push(`updated_at = CURRENT_TIMESTAMP`);
   values.push(id);
 
+  const query = `UPDATE auth_service.users SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`;
   const { rows } = await pool.query(query, values);
-  if (!rows[0]) throw new Error('Usuario no encontrado');
+  if (rows.length === 0) throw new Error('User not found');
   return rows[0];
 };
 
 const deleteUser = async (id) => {
-  const query = `DELETE FROM auth_service.users WHERE id = $1 RETURNING id`;
+  const query = 'DELETE FROM auth_service.users WHERE id = $1 RETURNING *';
   const { rows } = await pool.query(query, [id]);
-  if (!rows[0]) throw new Error('Usuario no encontrado');
+  if (rows.length === 0) throw new Error('User not found');
   return rows[0];
 };
 
 const deactivateUser = async (id) => {
-  const query = `
-    UPDATE auth_service.users
-    SET is_active = false, updated_at = CURRENT_TIMESTAMP
-    WHERE id = $1
-    RETURNING id, email, full_name, phone, is_active, created_at, updated_at
-  `;
+  const query = 'UPDATE auth_service.users SET is_active = false, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING *';
   const { rows } = await pool.query(query, [id]);
-  if (!rows[0]) throw new Error('Usuario no encontrado');
+  if (rows.length === 0) throw new Error('User not found');
   return rows[0];
 };
 
@@ -97,5 +77,5 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
-  deactivateUser
+  deactivateUser,
 };

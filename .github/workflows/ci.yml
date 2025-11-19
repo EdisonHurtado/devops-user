@@ -15,21 +15,6 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: test_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@v4
 
@@ -38,23 +23,14 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Install PostgreSQL client
-        run: sudo apt-get install -y postgresql-client
-
-      - name: Initialize database schema
-        run: psql -h localhost -U postgres -d test_db -f scripts/init-db.sql
-        env:
-          PGPASSWORD: postgres
-
       - name: Install dependencies
         run: npm install
 
       - name: Create .env file for tests
         run: |
-          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/test_db" >> .env
+          echo "NODE_ENV=test" >> .env
           echo "JWT_SECRET=test-secret-key" >> .env
           echo "PORT=3000" >> .env
-          echo "NODE_ENV=test" >> .env
 
       - name: Run tests
         run: npm test

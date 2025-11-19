@@ -8,15 +8,18 @@ const {
   deactivateUser,
 } = require('../services/user.service');
 
-const formatUser = (user) => ({
-  id: user.id,
-  email: user.email,
-  name: user.full_name,
-  phone: user.phone,
-  is_active: user.is_active,
-  created_at: user.created_at,
-  updated_at: user.updated_at
-});
+const formatUser = (user) => {
+  console.log('Formateando usuario:', user); // DEBUG
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.full_name,  // ← Asegúrate que sea full_name
+    phone: user.phone,
+    is_active: user.is_active,
+    created_at: user.created_at,
+    updated_at: user.updated_at
+  };
+};
 
 const getUsers = async (req, res) => {
   try {
@@ -50,8 +53,6 @@ const createNewUser = async (req, res) => {
     }
 
     const { email, password, name, phone } = req.body;
-    console.log('Creando usuario:', { email, name, phone });
-    
     const user = await createUser({ email, password, full_name: name, phone });
     res.status(201).json(formatUser(user));
   } catch (error) {
