@@ -1,41 +1,36 @@
 const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
-const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-http');
-const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
-const { trace } = require('@opentelemetry/api');
+
+const apiToken = process.env.API_TOKEN;
+const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+const axiomDataset = process.env.AXIOM_DATASET;
+const serviceName = process.env.OTEL_SERVICE_NAME;
+
+console.log('🔧 OpenTelemetry Config:');
+console.log(`   - Token: ${apiToken ? '✓ Configurado' : '✗ Falta'}`);
+console.log(`   - Endpoint: ${otlpEndpoint}`);
+console.log(`   - Dataset: ${axiomDataset}`);
+console.log(`   - Service: ${serviceName}`);
 
 const traceExporter = new OTLPTraceExporter({
-  url: `${process.env.AXIOM_URL || 'https://api.axiom.co'}/v1/traces`,
+  url: otlpEndpoint,
   headers: {
-    'Authorization': `Bearer ${process.env.AXIOM_TOKEN}`,
-    'X-Axiom-Org-Id': process.env.AXIOM_ORG_ID
+    'Authorization': `Bearer ${apiToken}`,
+    'X-Axiom-Dataset': axiomDataset
   }
-});
-
-const metricExporter = new OTLPMetricExporter({
-  url: `${process.env.AXIOM_URL || 'https://api.axiom.co'}/v1/metrics`,
-  headers: {
-    'Authorization': `Bearer ${process.env.AXIOM_TOKEN}`,
-    'X-Axiom-Org-Id': process.env.AXIOM_ORG_ID
-  }
-});
-
-const metricReader = new PeriodicExportingMetricReader({
-  exporter: metricExporter,
-  intervalMillis: 60000
 });
 
 const sdk = new NodeSDK({
   traceExporter,
-  metricReader,
   instrumentations: [getNodeAutoInstrumentations()],
-  serviceName: 'ms-user',
+  serviceName: serviceName,
   serviceVersion: '1.0.0'
 });
 
 sdk.start();
 console.log('📊 OpenTelemetry iniciado');
+console.log('📤 Exportando traces a Axiom...');
 
 process.on('SIGTERM', () => {
   sdk.shutdown()
@@ -44,4 +39,4 @@ process.on('SIGTERM', () => {
     .finally(() => process.exit(0));
 });
 
-module.exports = { trace };
+module.exports = { trace: require('@opentelemetry/api').trace };

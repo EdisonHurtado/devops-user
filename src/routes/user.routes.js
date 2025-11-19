@@ -1,52 +1,168 @@
 const express = require('express');
-const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { createNewUser, getUsers, getUser, updateExistingUser, deleteExistingUser, deactivateExistingUser } = require('../controllers/user.controller');
+const {
+  getUsers,
+  getUser,
+  createNewUser,
+  updateExistingUser,
+  deleteExistingUser,
+  deactivateExistingUser,
+} = require('../controllers/user.controller');
 
-const handleValidationErrors = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array()[0].msg });
-  }
-  next();
-};
+const router = express.Router();
 
-// POST /api/users (crear usuario)
-router.post('/',
-  body('email').isEmail().withMessage('Email inválido'),
-  body('password').isLength({ min: 6 }).withMessage('Password mínimo 6 caracteres'),
-  body('name').notEmpty().withMessage('Name requerido'),
-  handleValidationErrors,
-  createNewUser
-);
-
-// POST /api/users/register (alias para crear)
-router.post('/register',
-  body('email').isEmail().withMessage('Email inválido'),
-  body('password').isLength({ min: 6 }).withMessage('Password mínimo 6 caracteres'),
-  body('name').notEmpty().withMessage('Name requerido'),
-  handleValidationErrors,
-  createNewUser
-);
-
-// POST /api/users/login (solo retorna error 404 por ahora)
-router.post('/login', (req, res) => {
-  res.status(404).json({ error: 'Login no implementado en CRUD' });
-});
-
-// GET /api/users (con autenticación)
+/**
+ * @swagger
+ * /api/users:
+ *   get:
+ *     summary: Obtener todos los usuarios
+ *     description: Retorna una lista de todos los usuarios activos
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ */
 router.get('/', getUsers);
 
-// GET /api/users/:id (con autenticación)
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Obtener usuario por ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Usuario encontrado
+ *       404:
+ *         description: Usuario no encontrado
+ */
 router.get('/:id', getUser);
 
-// PUT /api/users/:id (sin autenticación por ahora)
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Crear nuevo usuario
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Usuario creado exitosamente
+ *       400:
+ *         description: Datos inválidos
+ */
+router.post(
+  '/',
+  [
+    body('email').isEmail().withMessage('Email inválido'),
+    body('password').isLength({ min: 6 }).withMessage('Contraseña debe tener mínimo 6 caracteres'),
+    body('name').notEmpty().withMessage('Nombre requerido'),
+  ],
+  createNewUser
+);
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   put:
+ *     summary: Actualizar usuario
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado
+ *       404:
+ *         description: Usuario no encontrado
+ */
 router.put('/:id', updateExistingUser);
 
-// DELETE /api/users/:id (sin autenticación por ahora)
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   delete:
+ *     summary: Eliminar usuario
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Usuario eliminado
+ *       404:
+ *         description: Usuario no encontrado
+ */
 router.delete('/:id', deleteExistingUser);
 
-// PATCH /api/users/:id/deactivate
-router.patch('/:id/deactivate', deactivateExistingUser);
+/**
+ * @swagger
+ * /api/users/{id}/deactivate:
+ *   put:
+ *     summary: Desactivar usuario
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Usuario desactivado
+ *       404:
+ *         description: Usuario no encontrado
+ */
+router.put('/:id/deactivate', deactivateExistingUser);
 
 module.exports = router;
