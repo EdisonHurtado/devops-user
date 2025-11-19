@@ -38,10 +38,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Create .env file
         run: |
@@ -77,11 +76,9 @@ jobs:
 
       - name: Test API Endpoints
         run: |
-          # Health check
           echo "Testing /api/health..."
           curl -f http://localhost:3000/api/health
           
-          # Test users endpoint (ajusta según tus rutas)
           echo "Testing /api/users..."
           curl -f http://localhost:3000/api/users || echo "Users endpoint requires auth"
 
@@ -118,7 +115,6 @@ jobs:
             --env-file .env \
             ${{ env.DOCKER_IMAGE_NAME }}:test
           
-          # Wait for container to start
           sleep 15
 
       - name: Test Docker container health
@@ -157,8 +153,6 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
             ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:buildcache,mode=max
 
   integration-tests:
     name: Integration Tests
@@ -176,7 +170,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run integration tests
         run: npm run test:integration --if-present
