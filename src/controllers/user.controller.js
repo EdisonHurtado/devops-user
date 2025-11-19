@@ -23,6 +23,7 @@ const getUsers = async (req, res) => {
     const users = await getAllUsers();
     res.status(200).json(users.map(formatUser));
   } catch (error) {
+    console.error('Error en getUsers:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -31,8 +32,12 @@ const getUser = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await getUserById(id);
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
     res.status(200).json(formatUser(user));
   } catch (error) {
+    console.error('Error en getUser:', error);
     res.status(404).json({ error: error.message });
   }
 };
@@ -45,9 +50,12 @@ const createNewUser = async (req, res) => {
     }
 
     const { email, password, name, phone } = req.body;
+    console.log('Creando usuario:', { email, name, phone });
+    
     const user = await createUser({ email, password, full_name: name, phone });
     res.status(201).json(formatUser(user));
   } catch (error) {
+    console.error('Error en createNewUser:', error);
     if (error.message.includes('duplicate')) {
       return res.status(409).json({ error: 'Email ya registrado' });
     }
@@ -67,6 +75,7 @@ const updateExistingUser = async (req, res) => {
     const user = await updateUser(id, updates);
     res.status(200).json(formatUser(user));
   } catch (error) {
+    console.error('Error en updateExistingUser:', error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -77,6 +86,7 @@ const deleteExistingUser = async (req, res) => {
     await deleteUser(id);
     res.status(200).json({ message: 'Usuario eliminado' });
   } catch (error) {
+    console.error('Error en deleteExistingUser:', error);
     res.status(404).json({ error: error.message });
   }
 };
@@ -87,6 +97,7 @@ const deactivateExistingUser = async (req, res) => {
     const user = await deactivateUser(id);
     res.status(200).json(formatUser(user));
   } catch (error) {
+    console.error('Error en deactivateExistingUser:', error);
     res.status(404).json({ error: error.message });
   }
 };
